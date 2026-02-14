@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Users (Customers Only - via Clerk)
+model User {
+  id        String   @id // Matches Clerk ID
+  name      String?
+  email     String   @unique
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// 2. Products (The "Base" Item)
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  basePrice   Decimal  @db.Decimal(10, 2)
+  category    Category
+  images      String[] // Array of Cloudinary URLs
+  inStock     Boolean  @default(true)
+  
+  // THE MAGIC FIELD: Stores all customization rules
+  options     Json?    
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  OrderItem   OrderItem[]
+}
+
+// 3. Orders (Production Pipeline)
+model Order {
+  id          String      @id @default(cuid())
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING) // The Manufacturing Pipeline
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+}
+
+// 4. Order Items (What they actually bought)
+model OrderItem {
+  id            String  @id @default(cuid())
+  
+  order         Order   @relation(fields: [orderId], references: [id])
+  orderId       String
+  
+  product       Product @relation(fields: [productId], references: [id])
+  productId     String
+
+  // --- NEW FIELDS ADDED HERE ---
+  name          String   // Saves the product name at time of purchase
+  image         String?  // Saves the specific image/variant
+  // ---------------------------
+
+  quantity      Int
+  price         Decimal @db.Decimal(10, 2) // Price at time of purchase
+
+  // Stores the User's choices (e.g., Fabric, Size)
+  selectedConfig Json?   
+}
+
+enum Category {
+  SOFA
+  WALLPAPER
+  PILLOW
+  BLANKET
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  FABRIC_CUTTING    // Custom manufacturing step
+  STITCHING         // Custom manufacturing step
+  READY_TO_SHIP
+  DELIVERED
+  CANCELLED
+}
