@@ -5,10 +5,10 @@ import { useUser, SignInButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Script from 'next/script';
 import { Loader2, Trash2, Plus, Minus } from 'lucide-react';
 
 export default function CheckoutPage() {
-  // Added removeItem and updateQuantity from store
   const { items, clearCart, removeItem, updateQuantity } = useCart();
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
@@ -23,10 +23,8 @@ export default function CheckoutPage() {
     phone: ''
   });
 
-  // Calculate Subtotal
   const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-  // Redirect to shop if cart is empty (prevent access to empty checkout)
   useEffect(() => {
     if (isLoaded && items.length === 0 && !isSuccess) {
       router.push('/shop');
@@ -42,32 +40,68 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      // 1. Create order on backend (returns Razorpay Order ID)
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          items,
-          shippingDetails: formData 
-        }), 
+        body: JSON.stringify({ items, shippingDetails: formData }), 
       });
 
       if (!response.ok) {
         const errorMsg = await response.text(); 
-        throw new Error(errorMsg || 'Failed to place order');
+        throw new Error(errorMsg || 'Failed to initialize order');
       }
 
       const data = await response.json();
-      console.log("Order Response:", data);
+      const { razorpayOrderId, id: orderId } = data;
 
-      const orderId = data.id || data.order?.id || data.newOrder?.id;
+      if (!razorpayOrderId) throw new Error("Payment gateway initialization failed.");
 
-      if (orderId) {
-        setIsSuccess(true);
-        clearCart();
-        router.push(`/success/${orderId}`);
-      } else {
-        throw new Error("Order placed, but Order ID was missing from response.");
-      }
+      // 2. Initialize Razorpay Checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_RGJbfhsGalIzgh', // Fallback or from env
+        amount: Math.round(subtotal * 100),
+        currency: "INR",
+        name: "Shree Samarth Krupa",
+        description: "Luxury Furnishing",
+        order_id: razorpayOrderId,
+        handler: async function (response) {
+          try {
+            // 3. Verify Payment
+            const verifyRes = await fetch('/api/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(response)
+            });
+            const verifyData = await verifyRes.json();
+            
+            if (verifyData.success) {
+              setIsSuccess(true);
+              clearCart();
+              router.push(`/success/${verifyData.orderId}`);
+            } else {
+              alert("Payment verification failed.");
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Payment verification error.");
+          }
+        },
+        prefill: {
+          name: user?.fullName || "",
+          email: user?.primaryEmailAddress?.emailAddress || "",
+          contact: formData.phone
+        },
+        theme: {
+          color: "#1a1a1a" // royal-900 approx
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+      
+      // Stop submitting state so user can interact
+      setIsSubmitting(false);
       
     } catch (error) {
       console.error("Checkout Error:", error);
@@ -85,6 +119,8 @@ export default function CheckoutPage() {
   }
 
   return (
+    <>
+    <Script src="https://checkout.razorpay.com/v1/checkout.js" />
     <main className="min-h-screen bg-cream px-4 py-12 md:px-12 lg:px-24">
       <h1 className="mb-12 font-serif text-4xl text-royal-900">Secure Checkout</h1>
 
@@ -278,5 +314,6 @@ export default function CheckoutPage() {
 
       </div>
     </main>
+    </>
   );
 }

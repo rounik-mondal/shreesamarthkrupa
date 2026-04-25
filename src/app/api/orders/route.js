@@ -22,27 +22,41 @@ export async function POST(req) {
     // Calculate total price based on quantity
     const totalAmount = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
+    // Create Razorpay Order
+    const Razorpay = (await import('razorpay')).default;
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const rpOrder = await razorpay.orders.create({
+      amount: Math.round(totalAmount * 100), // in paise
+      currency: 'INR',
+      receipt: `rcpt_${Date.now()}_${user.id.slice(0, 5)}`
+    });
+
     // Create the Order and OrderItems in one transaction
     const order = await db.order.create({
       data: {
         userId: user.id,
         totalAmount: totalAmount,
         status: 'PENDING',
-        // Optional: Save shipping details if your schema supports it
-        // address: shippingDetails.address, 
+        paymentStatus: 'PENDING',
+        razorpayOrderId: rpOrder.id,
         items: {
           create: items.map((item) => ({
-            productId: item.productId || "unknown", // Ensure fallback if missing
+            productId: item.productId || item.id || "unknown", // Ensure fallback if missing
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            image: item.image // Save the image string
+            image: item.image,
+            selectedConfig: item.customization || null
           }))
         }
       }
     });
 
-    return NextResponse.json(order);
+    return NextResponse.json({ ...order, razorpayOrderId: rpOrder.id });
 
   } catch (error) {
     console.error("[ORDERS_POST]", error);

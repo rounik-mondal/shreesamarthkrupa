@@ -61,7 +61,7 @@ export default function OrdersPage() {
                 
                 {/* Order Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50 px-6 py-4 border-b border-gray-100">
-                  <div className="flex gap-8 text-sm">
+                  <div className="flex flex-wrap gap-8 text-sm">
                     <div>
                       <p className="text-gray-500">Order Placed</p>
                       <p className="font-medium text-royal-900">
@@ -76,9 +76,24 @@ export default function OrdersPage() {
                       <p className="text-gray-500">Order #</p>
                       <p className="font-mono text-gray-600">{order.id.slice(-8).toUpperCase()}</p>
                     </div>
+                    {order.trackingLink && (
+                      <div>
+                        <p className="text-gray-500">Tracking</p>
+                        <a href={order.trackingLink} target="_blank" rel="noreferrer" className="font-medium text-gold-600 hover:underline">
+                          Track Shipment <ArrowRight className="inline h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
                   </div>
-                  <div className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-green-700">
-                    {order.status || 'Processing'}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                      order.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      Payment: {order.paymentStatus}
+                    </div>
+                    <div className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-700">
+                      Status: {order.status.replace('_', ' ') || 'Processing'}
+                    </div>
                   </div>
                 </div>
 
