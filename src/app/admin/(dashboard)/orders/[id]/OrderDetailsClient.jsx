@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useToast } from '@/lib/ToastContext';
 
 export default function OrderDetailsClient({ order }) {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(order.status);
   const [trackingLink, setTrackingLink] = useState(order.trackingLink || '');
@@ -20,10 +22,10 @@ export default function OrderDetailsClient({ order }) {
         body: JSON.stringify({ status, trackingLink })
       });
       if (!res.ok) throw new Error('Failed to update');
-      alert('Order updated successfully!');
+      toast.success('Order updated successfully!');
       router.refresh();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

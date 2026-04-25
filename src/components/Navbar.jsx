@@ -7,6 +7,7 @@ import { useCart } from '@/lib/store';
 import { UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { ShoppingBag, User, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function Navbar() {
   const { items } = useCart();
@@ -31,7 +32,8 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <div className="hidden gap-8 md:flex">
           <NavLink href="/shop" pathname={pathname}>Collection</NavLink>
-          <NavLink href="/about" pathname={pathname}>Atelier</NavLink>
+          <NavLink href="/customizer" pathname={pathname}>Customizer</NavLink>
+          {/* <NavLink href="/about" pathname={pathname}>Atelier</NavLink> */}
         </div>
 
         {/* Right Actions */}
@@ -51,6 +53,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <SignedIn>
               <div className="flex items-center gap-4">
+                <NotificationBell isAdmin={false} />
                 <Link 
                   href="/orders" 
                   className="hidden text-sm font-medium text-gray-600 transition hover:text-royal-900 md:block"
@@ -96,9 +99,9 @@ export default function Navbar() {
               <MobileNavLink href="/shop" onClick={() => setIsMenuOpen(false)}>
                 Collection
               </MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
+              {/* <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
                 Atelier
-              </MobileNavLink>
+              </MobileNavLink> */}
               <SignedIn>
                 <MobileNavLink href="/orders" onClick={() => setIsMenuOpen(false)}>
                   My Orders

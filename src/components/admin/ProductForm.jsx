@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { useToast } from '@/lib/ToastContext';
 
 export default function ProductForm({ initialData }) {
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -31,11 +33,12 @@ export default function ProductForm({ initialData }) {
         body: JSON.stringify(formData)
       });
       if (!res.ok) throw new Error('Failed to save product');
+      toast.success('Product saved successfully');
       router.push('/admin/products');
       router.refresh();
     } catch (error) {
       console.error(error);
-      alert('Failed to save product');
+      toast.error('Failed to save product');
       setLoading(false);
     }
   };
@@ -99,7 +102,7 @@ export default function ProductForm({ initialData }) {
         updateChoice(stepIndex, choiceIndex, 'image', data.url);
       }
     } catch (err) {
-      alert("Failed to upload texture");
+      toast.error("Failed to upload texture");
     }
   };
 

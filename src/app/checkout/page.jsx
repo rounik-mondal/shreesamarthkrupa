@@ -7,11 +7,13 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import { Loader2, Trash2, Plus, Minus } from 'lucide-react';
+import { useToast } from '@/lib/ToastContext';
 
 export default function CheckoutPage() {
   const { items, clearCart, removeItem, updateQuantity } = useCart();
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+  const toast = useToast();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false); 
@@ -80,11 +82,11 @@ export default function CheckoutPage() {
               clearCart();
               router.push(`/success/${verifyData.orderId}`);
             } else {
-              alert("Payment verification failed.");
+              toast.error("Payment verification failed.");
             }
           } catch (err) {
             console.error(err);
-            alert("Payment verification error.");
+            toast.error("Payment verification error.");
           }
         },
         prefill: {
@@ -105,7 +107,7 @@ export default function CheckoutPage() {
       
     } catch (error) {
       console.error("Checkout Error:", error);
-      alert(`Order Failed: ${error.message}`);
+      toast.error(`Order Failed: ${error.message}`);
       setIsSubmitting(false);
     } 
   };

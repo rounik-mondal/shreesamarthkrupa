@@ -1,7 +1,8 @@
 import { Playfair_Display, Lato } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
-import CartDrawer from "@/components/CartDrawer"; // <--- Add this
+import CartDrawer from "@/components/CartDrawer";
 import Navbar from "@/components/Navbar";
+import { ToastProvider } from "@/lib/ToastContext";
 import "./globals.css";
 
 const playfair = Playfair_Display({ 
@@ -27,9 +28,11 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
     <html lang="en">
       <body className={`${playfair.variable} ${lato.variable} bg-cream text-royal-900 antialiased`}>
-        <Navbar/>
-        {children}
-        <CartDrawer /> {/* <--- Add this right before closing body */}
+        <ToastProvider>
+          <Navbar/>
+          {children}
+          <CartDrawer />
+        </ToastProvider>
       </body>
     </html>
     </ClerkProvider>

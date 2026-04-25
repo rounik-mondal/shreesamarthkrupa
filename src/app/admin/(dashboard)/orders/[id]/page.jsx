@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import OrderDetailsClient from './OrderDetailsClient';
 
 export default async function OrderDetailsPage({ params }) {
-  const { id } = params;
+  const { id } = await params;
 
   const order = await prisma.order.findUnique({
     where: { id },
